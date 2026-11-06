@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+# Hive metastore and tables (embedded Hive, local to each machine)
+metastore_db/
+warehouse/
+derby.log
+spark-warehouse/
+# Generated data and run outputs
+data/
+runs/
+state/
+metastore_cluster/

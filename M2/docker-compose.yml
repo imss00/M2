@@ -1,0 +1,74 @@
+# Hadoop cluster for the pipeline: HDFS + YARN + Hive metastore DB + client.
+#   docker compose build          # once (~15 min)
+#   docker compose up -d
+#   UIs: HDFS http://localhost:9870   YARN http://localhost:8088   Spark (during a run) http://localhost:4040
+# Docker Desktop: Settings > Resources > Memory 16 GB or more.
+name: tpcxai
+
+x-hadoop: &hadoop
+  image: tpcxai-hadoop:latest
+  pull_policy: never
+  restart: unless-stopped
+
+services:
+  metastore-db:                     # Hive metastore schema (tables, columns, locations)
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: metastore
+      POSTGRES_USER: hive
+      POSTGRES_PASSWORD: hive
+    volumes: [metastore-db:/var/lib/postgresql/data]
+    restart: unless-stopped
+
+  namenode:                         # HDFS metadata
+    <<: *hadoop
+    hostname: namenode
+    command: namenode
+    ports: ["9870:9870"]
+    volumes: [nn:/hadoop/dfs/name]
+
+  resourcemanager:                  # YARN scheduler
+    <<: *hadoop
+    hostname: resourcemanager
+    command: resourcemanager
+    ports: ["8088:8088"]
+    depends_on: [namenode]
+
+  worker1:                          # HDFS DataNode + YARN NodeManager
+    <<: *hadoop
+    hostname: worker1
+    command: worker
+    volumes: [dn1:/hadoop/dfs/data, ./:/workspace]
+    depends_on: [namenode, resourcemanager]
+
+  worker2:
+    <<: *hadoop
+    hostname: worker2
+    command: worker
+    volumes: [dn2:/hadoop/dfs/data, ./:/workspace]
+    depends_on: [namenode, resourcemanager]
+
+  client:                           # runs run.py (Spark driver, model jobs)
+    <<: *hadoop
+    build: {context: ., dockerfile: docker/Dockerfile}
+    hostname: client
+    command: client
+    working_dir: /workspace
+    volumes: [./:/workspace]
+    ports: ["4040:4040"]
+    environment:
+      TPCXAI_MASTER: yarn
+      TPCXAI_WAREHOUSE: hdfs://namenode:9000/user/hive/warehouse
+      # empty = Hive metastore embedded in the driver (Derby, tested).
+      # jdbc:postgresql://metastore-db:5432/metastore = separate metastore DB (experimental)
+      TPCXAI_METASTORE_URL: ""
+      METASTORE_USER: hive
+      METASTORE_PASSWORD: hive
+      SPARK_YARN_ARCHIVE: hdfs://namenode:9000/spark/spark-jars.zip
+    depends_on: [metastore-db, namenode, resourcemanager, worker1, worker2]
+
+volumes:
+  metastore-db:
+  nn:
+  dn1:
+  dn2:

@@ -1,0 +1,11 @@
+# Model libraries pinned like the TPCx-AI v2.0.0 kit (tools/python/python.yaml), for --model-python.
+# Needs Python 3.9, e.g.:
+#   uv venv --python 3.9 kitenv && uv pip install --python kitenv/bin/python -r requirements-kit.txt
+#   python run.py ... --model-python kitenv/bin/python
+numpy==1.23.5
+pandas==1.5.2
+scikit-learn==1.2.2
+statsmodels==0.12.2
+xgboost==1.7.3
+scipy<1.12
+pyarrow<15

@@ -1,0 +1,8 @@
+data/
+runs/
+warehouse/
+metastore_db/
+state/
+derby.log
+**/__pycache__/
+*.zip

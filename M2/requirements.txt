@@ -1,0 +1,8 @@
+# Java 17 or 21 is required by Spark 4.0 (check: java -version)
+pyspark>=4.0,<4.1
+pandas>=2.0
+pyarrow>=14
+statsmodels>=0.14
+xgboost>=2.0
+numpy
+scipy
